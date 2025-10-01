@@ -5,7 +5,7 @@
 **Base URL**: `http://localhost:3001/api`  
 **Formato**: JSON  
 **Autenticación**: No requerida  
-**CORS**: Habilitado para `http://localhost:3000`
+**CORS**: Habilitado para `http://localhost:3001`
 
 ## 📋 Endpoints Disponibles
 

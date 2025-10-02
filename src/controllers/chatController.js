@@ -38,13 +38,22 @@ class ChatController {
       // Enviar mensaje a la IA
       const reply = await aiService.sendMessage(message);
       
+      // Generar timestamps para cada mensaje
+      const currentTime = Date.now(); // Usar timestamp en milisegundos
+      
       res.json({
         success: true,
         data: {
-          reply: reply,
-          userMessage: message
+          userMessage: {
+            text: message,
+            timestamp: currentTime
+          },
+          reply: {
+            text: reply,
+            timestamp: currentTime + 1 // Un milisegundo después para mantener el orden
+          }
         },
-        timestamp: new Date().toISOString()
+        timestamp: new Date(currentTime).toISOString()
       });
 
     } catch (error) {

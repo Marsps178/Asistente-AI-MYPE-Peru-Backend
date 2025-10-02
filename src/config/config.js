@@ -16,7 +16,7 @@ const config = {
   // Configuración de Google AI
   googleAI: {
     apiKey: process.env.GOOGLE_API_KEY,
-    model: 'gemini-1.5-pro'
+    model: 'gemini-2.0-flash' // Modelo Gemini 2.0 Flash
   },
 
   // Configuración de base de datos (para futuras implementaciones)

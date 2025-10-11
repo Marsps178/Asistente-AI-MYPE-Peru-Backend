@@ -43,22 +43,32 @@ class TaxRegimeService {
    */
   _calculateNuevoRUS(income) {
     const { payments } = config.taxRegimes.nuevoRUS;
-    const payment = income <= payments.low.threshold ? payments.low.amount : payments.high.amount;
+    const isLowCategory = income <= payments.low.threshold;
+    const payment = isLowCategory ? payments.low.amount : payments.high.amount;
+    const category = isLowCategory ? 1 : 2;
+    const categoryLabel = isLowCategory ? 'Categoría 1' : 'Categoría 2';
+    const annualPayment = payment * 12;
 
     return {
       regime: 'Nuevo RUS',
       payment: payment,
-      message: `Con S/ ${income.toFixed(2)} de ingresos, tu pago único mensual sería de S/ ${payment.toFixed(2)}. ¡Es perfecto para empezar!`,
+      message: `Con S/ ${income.toFixed(2)} de ingresos, tu pago único mensual sería de S/ ${payment.toFixed(2)} (${categoryLabel}). En NRUS no se usa porcentaje, es una cuota fija según categoría.`,
       benefits: [
-        'Puedes emitir boletas de venta.',
-        'Acceso a créditos para emprendedores.',
-        'Te permite tener un negocio formal de manera muy sencilla.'
+        'No lleva registros contables.',
+        'Pago mensual único (IR + IGV) mediante cuota fija.',
+        'Comprobantes: boletas, tickets y guías. No otorga crédito fiscal.'
       ],
       details: {
         monthlyIncome: income,
         annualIncome: income * 12,
-        taxType: 'Pago único mensual',
-        igvIncluded: true
+        taxType: 'Cuota fija mensual',
+        igvIncluded: true,
+        isFixedQuota: true,
+        taxRate: null,
+        category,
+        categoryLabel,
+        monthlyPayment: payment,
+        annualPayment
       }
     };
   }
@@ -161,7 +171,9 @@ class TaxRegimeService {
         name: 'Nuevo RUS',
         maxMonthlyIncome: config.taxRegimes.nuevoRUS.maxIncome,
         description: 'Ideal para pequeños negocios que recién empiezan',
-        requirements: ['Ingresos hasta S/ 8,000 mensuales', 'Solo boletas de venta']
+        requirements: ['Ingresos hasta S/ 8,000 mensuales', 'Solo boletas de venta'],
+        taxRateLabel: 'Cuota fija (sin porcentaje)',
+        payments: { categoria1: 20, categoria2: 50 }
       },
       rer: {
         name: 'Régimen Especial de Renta (RER)',

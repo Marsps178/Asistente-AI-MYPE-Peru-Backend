@@ -9,14 +9,28 @@ const config = require('../config/config');
 class AIService {
   constructor() {
     this.genAI = new GoogleGenerativeAI(config.googleAI.apiKey);
-    this.model = this.genAI.getGenerativeModel({ model: config.googleAI.model });
     this.systemPrompt = `
-      Eres un asistente virtual llamado 'Asistente AI-MYPE Peru'. 
-      Tu misión es ayudar a los emprendedores peruanos a formalizarse. 
-      Eres amigable, motivador y experto en los regímenes tributarios para pequeñas empresas (Nuevo RUS, RER, RMT). 
-      Tu lenguaje es sencillo y directo.
-      No respondas preguntas que no sean sobre negocios, emprendimiento o impuestos en Peru.
+      Rol: Eres el 'LEGALYTH IA'. Ayudas a emprendedores peruanos a elegir y cumplir el régimen tributario adecuado, explicar obligaciones y guiar pasos prácticos de formalización.
+
+      Alcance: Perú, MYPES (micro y pequeñas empresas). No respondas fuera de negocios/emprendimiento/impuestos peruanos.
+
+      Base de conocimiento (2025, usar como referencia, no inventar):
+      - Nuevo RUS (NRUS): Personas naturales/sucesiones indivisas para clientes consumidores finales y oficios. Límites: ingresos y compras hasta S/ 96,000 anuales (S/ 8,000 mensuales), activos fijos hasta S/ 70,000 (sin predios/vehículos). Cuotas: Cat.1 (hasta S/ 5,000) S/ 20; Cat.2 (hasta S/ 8,000) S/ 50; categoría especial agrícola hasta S/ 60,000 S/ 0. Comprobantes: boletas, tickets, guías (sin crédito fiscal). Exclusiones: actividades profesionales, transporte ≥ 2t, pasajeros, agencias, casinos, espectáculos, inmuebles, combustibles.
+      - RER (Régimen Especial de Renta): Pequeñas empresas de comercialización/servicios. Límites: ingresos netos anuales ≤ S/ 525,000; compras ≤ S/ 525,000; activos fijos ≤ S/ 126,000; hasta 10 trabajadores por turno. Impuestos: Renta 1.5% mensual sobre ingresos netos; IGV 18%. Libros: Registro de Compras y Registro de Ventas. Exclusiones: construcción, transporte ≥ 2t, pasajeros, actividades profesionales.
+      - RMT (Régimen MYPE Tributario): Para rentas de tercera categoría. Límite: ingresos netos anual ≤ 1,700 UIT. UIT 2025 = S/ 5,350 → 1,700 UIT = S/ 9,095,000. Impuesto mensual: si ingresos ≤ 300 UIT, 1% de ingresos netos; si > 300 UIT, 1.5% o coeficiente (el mayor). IGV 18%. Regularización anual: hasta 15 UIT (S/ 80,250) tasa 10%; exceso 29.5%. Libros: hasta 300 UIT: Registro de Ventas y Compras + Libro Diario simplificado; 300–500 UIT: añadir Libro Diario y Mayor; 500–1,700 UIT: añadir Inventarios y Balances. Exclusiones: vinculados que superen 1,700 UIT, sucursales del exterior, IEP.
+      - Régimen General (RG): Sin límites de ingreso/actividad. Contabilidad completa. Declaración anual con 29.5% sobre utilidad neta. Pérdidas se arrastran a utilidades futuras.
+      - Registros contables: Registro de Compras/Registro de Ventas obligatorios según régimen; desde julio 2023 obligación gradual de RVIE (Registro de Ventas e Ingresos Electrónicos). Formalidades: legalización y cumplimiento de cronología/correlatividad donde aplique.
+      - Conversión UIT 2025: 15 UIT = S/ 80,250; 300 UIT = S/ 1,605,000; 500 UIT = S/ 2,675,000; 1,700 UIT = S/ 9,095,000.
+
+      Comportamiento:
+      - Haz 2–4 preguntas de aclaración antes de recomendar: ingresos mensuales aproximados, tipo de actividad, si requiere emitir facturas, clientes (finales vs empresas), nivel de gastos deducibles.
+      - Responde en lenguaje sencillo y directo, enfocado en acción.
+      - Estructura tus respuestas con: Resumen, Requisitos y límites, Impuestos y pagos (mensual/anual y IGV), Libros y obligaciones, Recomendación, Siguientes pasos.
+      - Incluye SIEMPRE al final una sección "Fuentes oficiales" con 2–3 enlaces relevantes, priorizando SUNAT: https://orientacion.sunat.gob.pe/, https://www.gob.pe/sunat, https://www.sunat.gob.pe/ (y páginas específicas si son pertinentes).
+      - Si detectas información sensible a cambios (UIT, tasas, exclusiones), advierte que se debe validar en SUNAT y que las cifras pueden actualizarse.
+      - No inventes cifras. Si falta un dato, pide la información o indica cómo calcularlo.
     `;
+    this.model = this.genAI.getGenerativeModel({ model: config.googleAI.model, systemInstruction: this.systemPrompt });
   }
 
   /**
@@ -30,13 +44,11 @@ class AIService {
       const chat = this.model.startChat({
         history: [
           { role: "user", parts: [{ text: this.systemPrompt }] },
-          { 
-            role: "model", 
-            parts: [{ 
-              text: "¡Hola! Soy tu asistente para la formalización. Estoy listo para ayudarte a hacer crecer tu negocio. ¿Cuál es tu consulta?" 
-            }] 
-          },
-        ],
+          {
+            role: "model",
+            parts: [{ text: "¡Hola! Soy tu asistente AI-MYPE Perú. Cuéntame tu caso y te ayudo a elegir el régimen adecuado." }]
+          }
+        ]
       });
 
       const result = await chat.sendMessage(message);
@@ -74,7 +86,12 @@ El Nuevo RUS es perfecto para pequeños negocios como el tuyo. Te permite:
 - Hasta S/ 5,000 mensuales: S/ 20
 - De S/ 5,001 a S/ 8,000: S/ 50
 
-¿Te gustaría que calculemos qué régimen te conviene más según tus ingresos?`;
+¿Te gustaría que calculemos qué régimen te conviene más según tus ingresos?
+
+Fuentes oficiales:
+- https://orientacion.sunat.gob.pe/
+- https://www.gob.pe/sunat
+- https://www.sunat.gob.pe/`;
     }
     
     if (lowerMessage.includes('rer') || lowerMessage.includes('especial')) {
@@ -93,7 +110,12 @@ El RER es ideal para negocios en crecimiento:
 - Si necesitas emitir facturas
 - Para negocios con ingresos variables
 
-¿Quieres que te ayude a calcular cuánto pagarías en este régimen?`;
+¿Quieres que te ayude a calcular cuánto pagarías en este régimen?
+
+Fuentes oficiales:
+- https://orientacion.sunat.gob.pe/
+- https://www.gob.pe/sunat
+- https://www.sunat.gob.pe/`;
     }
     
     if (lowerMessage.includes('mype') || lowerMessage.includes('tributario')) {
@@ -112,7 +134,12 @@ El régimen para empresas que van en serio:
 - Manejas muchos gastos deducibles
 - Quieres crecer sin límites
 
-¿Te ayudo a evaluar si este régimen te conviene?`;
+¿Te ayudo a evaluar si este régimen te conviene?
+
+Fuentes oficiales:
+- https://orientacion.sunat.gob.pe/
+- https://www.gob.pe/sunat
+- https://www.sunat.gob.pe/`;
     }
     
     if (lowerMessage.includes('calcular') || lowerMessage.includes('cuanto')) {
@@ -129,7 +156,12 @@ Con esta información te diré exactamente:
 - Cuánto pagarías mensualmente
 - Qué beneficios tendrías
 
-¡Compárteme estos datos y te ayudo al instante!`;
+¡Compárteme estos datos y te ayudo al instante!
+
+Fuentes oficiales:
+- https://orientacion.sunat.gob.pe/
+- https://www.gob.pe/sunat
+- https://www.sunat.gob.pe/`;
     }
     
     if (lowerMessage.includes('hola') || lowerMessage.includes('buenos') || lowerMessage.includes('ayuda')) {
@@ -148,7 +180,12 @@ Estoy aquí para ayudarte a formalizar tu negocio y elegir el mejor régimen tri
 - "¿Cuánto pagaría con ingresos de S/ 3,000?"
 - "¿Qué régimen me conviene?"
 
-¿En qué puedo ayudarte hoy? 😊`;
+¿En qué puedo ayudarte hoy? 😊
+
+Fuentes oficiales:
+- https://orientacion.sunat.gob.pe/
+- https://www.gob.pe/sunat
+- https://www.sunat.gob.pe/`;
     }
     
     // Respuesta por defecto
@@ -167,7 +204,12 @@ Soy especialista en:
 - "¿Cuánto pagaría con S/ 4,000 de ingresos?"
 - "¿Qué régimen me conviene?"
 
-¡Estoy aquí para ayudarte! 😊`;
+¡Estoy aquí para ayudarte! 😊
+
+Fuentes oficiales:
+- https://orientacion.sunat.gob.pe/
+- https://www.gob.pe/sunat
+- https://www.sunat.gob.pe/`;
   }
 
   /**

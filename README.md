@@ -203,7 +203,7 @@ pnpm lint
 
 1. **Nuevo RUS**: Hasta S/ 96,000 anuales
 2. **RER**: Hasta S/ 525,000 anuales
-3. **MYPE Tributario**: Hasta S/ 1,700,000 anuales
+3. **MYPE Tributario (RMT)**: Hasta 1,700 UIT anuales (UIT 2025 = S/ 5,350 → S/ 9,095,000)
 4. **Régimen General**: Sin límites
 
 ## 🧪 Testing

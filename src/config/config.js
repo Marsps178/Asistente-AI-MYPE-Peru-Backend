@@ -5,6 +5,9 @@
 
 require('dotenv').config();
 
+// Valor de la UIT vigente (2025)
+const UIT_2025 = 5350;
+
 const config = {
   // Configuración del servidor
   server: {
@@ -52,7 +55,35 @@ const config = {
     rer: {
       maxAnnualIncome: 525000,
       taxRate: 0.015 // 1.5%
+    },
+    // Régimen MYPE Tributario (RMT) basado en UIT 2025
+    rmt: {
+      // Límite de ingresos netos anuales: 1,700 UIT
+      maxAnnualIncome: 1700 * UIT_2025, // 1,700 UIT = S/ 9,095,000
+      // Umbral para el 1% mensual: hasta 300 UIT anuales
+      thresholds: {
+        lowAnnualIncome: 300 * UIT_2025 // 300 UIT = S/ 1,605,000
+      },
+      // Tasas mensuales de pago a cuenta de Renta
+      rates: {
+        monthlyLow: 0.01, // 1% si <= 300 UIT
+        monthlyHigh: 0.015 // 1.5% si > 300 UIT (o coeficiente, el mayor)
+      },
+      // Tasas de regularización anual (sobre utilidad neta)
+      annualRates: {
+        lowUIT: 15, // hasta 15 UIT
+        lowRate: 0.10, // 10%
+        highRate: 0.295 // 29.5%
+      }
     }
+  }
+  ,
+  // Parámetros económicos generales
+  uit: {
+    value: UIT_2025
+  },
+  igv: {
+    rate: 0.18
   }
 };
 

@@ -4,7 +4,11 @@
  */
 
 const aiService = require('../services/aiService');
+const authService = require('../services/authService');
 const { validationResult } = require('express-validator');
+const { PrismaClient } = require('@prisma/client');
+
+const prisma = new PrismaClient();
 
 class ChatController {
   /**
@@ -34,12 +38,52 @@ class ChatController {
       }
 
       const { message } = req.body;
+      const user = req.user; // Viene del middleware de autenticación
+
+      // Si hay usuario autenticado, verificar límites y incrementar contador
+      if (user) {
+        // Verificar si puede hacer consultas
+        if (!user.isPremium) {
+          const freeQueriesLimit = parseInt(process.env.FREE_QUERIES_LIMIT || 5);
+          if (user.freeQueriesUsed >= freeQueriesLimit) {
+            return res.status(403).json({
+              success: false,
+              message: 'Has alcanzado el límite de consultas gratuitas',
+              code: 'QUERY_LIMIT_EXCEEDED',
+              data: {
+                freeQueriesUsed: user.freeQueriesUsed,
+                freeQueriesLimit,
+                requiresPayment: true,
+                paymentAmount: parseFloat(process.env.PAYMENT_AMOUNT || 15.00),
+                currency: process.env.PAYMENT_CURRENCY || 'PEN'
+              }
+            });
+          }
+        }
+      }
       
       // Enviar mensaje a la IA
       const reply = await aiService.sendMessage(message);
       
       // Generar timestamps para cada mensaje
       const currentTime = Date.now(); // Usar timestamp en milisegundos
+
+      // Si hay usuario autenticado, incrementar contador y guardar en historial
+      if (user) {
+        // Incrementar contador de consultas gratuitas si no es premium
+        if (!user.isPremium) {
+          await authService.incrementFreeQueries(user.id);
+        }
+
+        // Guardar en historial de chat
+        await prisma.chatMessage.create({
+          data: {
+            userId: user.id,
+            message,
+            response: reply
+          }
+        });
+      }
       
       res.json({
         success: true,
@@ -48,21 +92,79 @@ class ChatController {
             text: message,
             timestamp: currentTime
           },
-          reply: {
+          aiResponse: {
             text: reply,
-            timestamp: currentTime + 1 // Un milisegundo después para mantener el orden
+            timestamp: currentTime + 1 // Timestamp ligeramente posterior
           }
         },
-        timestamp: new Date(currentTime).toISOString()
+        // Información adicional para usuarios autenticados
+        ...(user && {
+          userInfo: {
+            freeQueriesUsed: user.freeQueriesUsed + (user.isPremium ? 0 : 1),
+            freeQueriesRemaining: user.isPremium ? 'unlimited' : Math.max(0, parseInt(process.env.FREE_QUERIES_LIMIT || 5) - user.freeQueriesUsed - 1),
+            isPremium: user.isPremium
+          }
+        })
       });
 
     } catch (error) {
-      console.error('Error en sendMessage:', error);
+      console.error('Error procesando mensaje:', error);
       
       res.status(500).json({
         success: false,
-        message: 'Hubo un error al comunicarme con la IA. Inténtalo de nuevo.',
+        message: 'Error interno del servidor al procesar el mensaje',
         timestamp: new Date().toISOString()
+      });
+    }
+  }
+
+  /**
+   * Obtiene el historial de chat del usuario autenticado
+   * @param {Object} req - Request object
+   * @param {Object} res - Response object
+   */
+  async getChatHistory(req, res) {
+    try {
+      const user = req.user;
+      const { page = 1, limit = 20 } = req.query;
+
+      const skip = (parseInt(page) - 1) * parseInt(limit);
+
+      const chatHistory = await prisma.chatMessage.findMany({
+        where: { userId: user.id },
+        orderBy: { createdAt: 'desc' },
+        skip,
+        take: parseInt(limit),
+        select: {
+          id: true,
+          message: true,
+          response: true,
+          createdAt: true
+        }
+      });
+
+      const total = await prisma.chatMessage.count({
+        where: { userId: user.id }
+      });
+
+      res.json({
+        success: true,
+        data: {
+          chatHistory,
+          pagination: {
+            page: parseInt(page),
+            limit: parseInt(limit),
+            total,
+            totalPages: Math.ceil(total / parseInt(limit))
+          }
+        }
+      });
+
+    } catch (error) {
+      console.error('Error obteniendo historial:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Error al obtener el historial de chat'
       });
     }
   }

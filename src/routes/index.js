@@ -9,9 +9,11 @@ const router = express.Router();
 // Importar rutas específicas
 const taxRegimeRoutes = require('./taxRegimeRoutes');
 const chatRoutes = require('./chatRoutes');
+const authRoutes = require('./authRoutes');
+const paymentRoutes = require('./paymentRoutes');
 
 /**
- * @route GET /api/
+ * @route GET /
  * @desc Endpoint raíz de la API
  * @access Public
  */
@@ -21,32 +23,34 @@ router.get('/', (req, res) => {
     message: 'API del Asistente AI-MYPE Peru funcionando correctamente',
     version: '1.0.0',
     endpoints: {
-      taxRegime: '/api/tax-regime',
-      chat: '/api/chat',
-      health: '/api/health'
+      auth: '/auth',
+      taxRegime: '/tax-regime',
+      chat: '/chat',
+      health: '/health',
+      payments: '/payments'
     },
     timestamp: new Date().toISOString()
   });
 });
 
 /**
- * @route GET /api/health
- * @desc Endpoint de salud general de la API
+ * @route GET /health
+ * @desc Endpoint de salud de la API
  * @access Public
  */
 router.get('/health', (req, res) => {
   res.json({
     success: true,
     message: 'API funcionando correctamente',
-    status: 'healthy',
-    uptime: process.uptime(),
     timestamp: new Date().toISOString(),
-    environment: process.env.NODE_ENV || 'development'
+    uptime: process.uptime()
   });
 });
 
-// Registrar rutas específicas
+// Registrar rutas
+router.use('/auth', authRoutes);
 router.use('/tax-regime', taxRegimeRoutes);
 router.use('/chat', chatRoutes);
+router.use('/payments', paymentRoutes);
 
 module.exports = router;

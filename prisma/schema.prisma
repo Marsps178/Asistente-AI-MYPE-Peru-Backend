@@ -1,0 +1,82 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  password  String
+  name      String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  // Campos para el sistema de límites
+  freeQueriesUsed Int @default(0)
+  isPremium       Boolean @default(false)
+  premiumExpiresAt DateTime?
+  
+  // Relaciones
+  sessions Session[]
+  payments Payment[]
+  chatHistory ChatMessage[]
+  
+  @@map("users")
+}
+
+model Session {
+  id        String   @id @default(cuid())
+  userId    String
+  token     String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  
+  // Relación con usuario
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@map("sessions")
+}
+
+model Payment {
+  id            String   @id @default(cuid())
+  userId        String
+  amount        Decimal  @db.Decimal(10, 2)
+  currency      String   @default("PEN")
+  status        PaymentStatus @default(PENDING)
+  paymentMethod String?
+  transactionId String?  @unique
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  
+  // Relación con usuario
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@map("payments")
+}
+
+model ChatMessage {
+  id        String   @id @default(cuid())
+  userId    String?
+  message   String   @db.Text
+  response  String   @db.Text
+  createdAt DateTime @default(now())
+  
+  // Relación con usuario (opcional para usuarios no registrados)
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+  
+  @@map("chat_messages")
+}
+
+enum PaymentStatus {
+  PENDING
+  COMPLETED
+  FAILED
+  CANCELLED
+}

@@ -44,17 +44,18 @@ app.get('/', (req, res) => {
     version: '1.0.0',
     environment: config.server.env,
     endpoints: {
-      api: '/api',
-      health: '/api/health',
-      taxRegime: '/api/tax-regime',
-      chat: '/api/chat'
+      auth: '/auth',
+      taxRegime: '/tax-regime',
+      chat: '/chat',
+      payments: '/payments',
+      health: '/health'
     },
     timestamp: new Date().toISOString()
   });
 });
 
-// Registrar rutas de la API
-app.use('/api', apiRoutes);
+// Registrar rutas de la API (sin prefijo /api)
+app.use('/', apiRoutes);
 
 // Middleware de manejo de errores
 app.use(notFoundHandler);

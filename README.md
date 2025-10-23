@@ -1,16 +1,15 @@
-# 🚀 Asistente AI-MYPE Peru - Backend
+# Asistente AI-MYPE Peru - Backend
 
-Backend profesional para el asistente inteligente de micro y pequeñas empresas (MYPE) en Perú. Proporciona servicios de cálculo de regímenes tributarios y chat con inteligencia artificial especializada en asesoría empresarial.
+Backend del asistente de inteligencia artificial especializado en consultas sobre regímenes tributarios para MYPEs en Perú.
 
-## 📋 Características
+## 🚀 Características
 
-- **Cálculo de Regímenes Tributarios**: Determina automáticamente el régimen tributario más conveniente
-- **Chat con IA**: Asistente inteligente especializado en MYPE usando Google Gemini AI
-- **Arquitectura Modular**: Estructura profesional con separación de responsabilidades
-- **Validación de Datos**: Validación robusta con express-validator
-- **Manejo de Errores**: Sistema centralizado de manejo de errores
-- **Logging**: Sistema de logs para desarrollo y producción
-- **Configuración Centralizada**: Gestión de configuración mediante variables de entorno
+- **Sistema de Autenticación**: Registro y login de usuarios con JWT
+- **Límites de Uso Gratuito**: 5 consultas gratuitas por usuario
+- **Sistema de Pagos**: Integración para activar acceso premium (15 soles peruanos)
+- **Chat con IA**: Consultas especializadas sobre regímenes tributarios
+- **Base de Datos**: MySQL en Railway con Prisma ORM
+- **Seguridad**: Middleware de autenticación y validación
 
 ## 🏗️ Arquitectura del Proyecto
 

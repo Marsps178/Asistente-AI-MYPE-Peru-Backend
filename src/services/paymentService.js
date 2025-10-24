@@ -70,15 +70,38 @@ class PaymentService {
    */
   async processPayment(paymentData) {
     try {
+      console.log('🔄 Procesando pago:', {
+        orderId: paymentData.orderId,
+        amount: paymentData.amount,
+        currency: paymentData.currency,
+        paymentMethod: paymentData.paymentMethod
+      });
+
       // SIMULACIÓN - En producción reemplazar con integración real
       // Ejemplo para Culqi, Mercado Pago, etc.
       
-      // Simular procesamiento exitoso (80% de probabilidad)
-      const isSuccessful = Math.random() > 0.2;
+      // Validar datos requeridos
+      if (!paymentData.orderId || !paymentData.amount) {
+        console.error('❌ Datos de pago incompletos:', paymentData);
+        return {
+          success: false,
+          status: 'FAILED',
+          message: 'Datos de pago incompletos'
+        };
+      }
+
+      // En desarrollo, siempre exitoso. En producción usar integración real
+      const isDevelopment = process.env.NODE_ENV !== 'production';
+      const isSuccessful = isDevelopment ? true : Math.random() > 0.2;
       
       if (isSuccessful) {
         // Generar ID de transacción simulado
         const transactionId = `TXN_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+        
+        console.log('✅ Pago procesado exitosamente:', {
+          transactionId,
+          orderId: paymentData.orderId
+        });
         
         return {
           success: true,
@@ -87,15 +110,16 @@ class PaymentService {
           message: 'Pago procesado exitosamente'
         };
       } else {
+        console.log('❌ Simulación de fallo de pago para:', paymentData.orderId);
         return {
           success: false,
           status: 'FAILED',
-          message: 'Error al procesar el pago'
+          message: 'Error al procesar el pago - Simulación de fallo'
         };
       }
 
     } catch (error) {
-      console.error('Error procesando pago:', error);
+      console.error('💥 Error procesando pago:', error);
       return {
         success: false,
         status: 'FAILED',

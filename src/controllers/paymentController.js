@@ -66,19 +66,27 @@ class PaymentController {
     try {
       const errors = validationResult(req);
       if (!errors.isEmpty()) {
+        console.error('❌ Errores de validación en processPayment:', errors.array());
         return res.status(400).json({
           success: false,
-          message: 'Datos de entrada inválidos',
+          message: 'Datos inválidos',
           errors: errors.array()
         });
       }
 
       const { orderId, paymentMethod } = req.body;
+      
+      console.log('🔄 Iniciando procesamiento de pago:', {
+        orderId,
+        paymentMethod,
+        timestamp: new Date().toISOString()
+      });
 
-      // Obtener datos del pago
+      // Buscar la orden de pago
       const payment = await paymentService.getPaymentStatus(orderId);
       
       if (!payment) {
+        console.error('❌ Orden de pago no encontrada:', orderId);
         return res.status(404).json({
           success: false,
           message: 'Orden de pago no encontrada'
@@ -86,6 +94,7 @@ class PaymentController {
       }
 
       if (payment.status !== 'PENDING') {
+        console.error('❌ Orden ya procesada:', { orderId, status: payment.status });
         return res.status(400).json({
           success: false,
           message: 'La orden de pago ya fue procesada'
@@ -100,9 +109,11 @@ class PaymentController {
         paymentMethod: paymentMethod || 'card'
       };
 
+      console.log('💳 Enviando datos a paymentService:', paymentData);
       const result = await paymentService.processPayment(paymentData);
 
       if (result.success) {
+        console.log('✅ Pago exitoso, confirmando:', result.transactionId);
         // Confirmar el pago
         await paymentService.confirmPayment(orderId, result.transactionId);
         
@@ -115,9 +126,10 @@ class PaymentController {
           }
         });
       } else {
+        console.error('❌ Fallo en el procesamiento:', result);
         res.status(400).json({
           success: false,
-          message: result.message,
+          message: result.message || 'Error al procesar el pago',
           data: {
             status: result.status
           }

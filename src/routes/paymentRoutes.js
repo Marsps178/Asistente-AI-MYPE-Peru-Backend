@@ -42,7 +42,7 @@ router.post('/process',
       .withMessage('El ID de la orden es requerido'),
     body('paymentMethod')
       .optional()
-      .isIn(['card', 'bank_transfer', 'wallet'])
+      .isIn(['card', 'bank_transfer', 'wallet', 'qr_code'])
       .withMessage('Método de pago inválido')
   ],
   paymentController.processPayment

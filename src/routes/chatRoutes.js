@@ -44,6 +44,13 @@ router.get('/history', requireAuth, chatController.getChatHistory);
 router.get('/info', chatController.getAssistantInfo);
 
 /**
+ * @route GET /api/chat/limits
+ * @desc Obtener límites de consultas del usuario
+ * @access Private
+ */
+router.get('/limits', requireAuth, chatController.getChatLimits);
+
+/**
  * @route GET /api/chat/health
  * @desc Verificar estado del servicio de chat
  * @access Public

@@ -211,6 +211,53 @@ class ChatController {
   }
 
   /**
+   * Obtiene los límites de consultas del usuario
+   * @param {Object} req - Request object
+   * @param {Object} res - Response object
+   */
+  async getChatLimits(req, res) {
+    try {
+      const user = req.user; // Viene del middleware de autenticación
+      
+      if (!user) {
+        return res.status(401).json({
+          success: false,
+          message: 'Usuario no autenticado'
+        });
+      }
+
+      const freeQueriesLimit = parseInt(process.env.FREE_QUERIES_LIMIT || 5);
+      
+      // Calcular límites según el tipo de usuario
+      const limits = {
+        isPremium: user.isPremium,
+        freeQueriesLimit: freeQueriesLimit,
+        freeQueriesUsed: user.freeQueriesUsed,
+        freeQueriesRemaining: user.isPremium ? null : Math.max(0, freeQueriesLimit - user.freeQueriesUsed),
+        hasUnlimitedQueries: user.isPremium,
+        canMakeQuery: user.isPremium || user.freeQueriesUsed < freeQueriesLimit,
+        premiumExpiresAt: user.premiumExpiresAt
+      };
+
+      res.json({
+        success: true,
+        message: 'Límites obtenidos correctamente',
+        data: limits,
+        timestamp: new Date().toISOString()
+      });
+
+    } catch (error) {
+      console.error('Error en getChatLimits:', error);
+      
+      res.status(500).json({
+        success: false,
+        message: 'Error al obtener los límites del usuario',
+        timestamp: new Date().toISOString()
+      });
+    }
+  }
+
+  /**
    * Endpoint de salud para verificar el servicio de chat
    * @param {Object} req - Request object
    * @param {Object} res - Response object
